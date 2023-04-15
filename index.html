@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
+    <link rel="stylesheet" type="text/css" href="style.css">
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Unity WebGL Player | Barbarian</title>
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
-    <link rel="stylesheet" href="TemplateData/style.css">
+    <title>%UNITY_WEB_NAME%</title>
   </head>
   <body>
     <div id="unity-container" class="unity-desktop">
@@ -22,14 +21,16 @@
         <div id="unity-build-title">Barbarian</div>
       </div>
     </div>
-      <script src="https://yandex.ru/games/sdk/v2"></script>
-      <script>
+
+    <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+    <script type="text/javascript">
+
       var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/vk_web_barbar.loader.js";
+      var loaderUrl = buildUrl + "/barbarian_web.loader.js";
       var config = {
-        dataUrl: buildUrl + "/vk_web_barbar.data.unityweb",
-        frameworkUrl: buildUrl + "/vk_web_barbar.framework.js.unityweb",
-        codeUrl: buildUrl + "/vk_web_barbar.wasm.unityweb",
+        dataUrl: buildUrl + "/barbarian_web.data.unityweb",
+        frameworkUrl: buildUrl + "/barbarian_web.framework.js.unityweb",
+        codeUrl: buildUrl + "/barbarian_web.wasm.unityweb",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "dzGames",
         productName: "Barbarian",
@@ -40,173 +41,64 @@
       var canvas = document.querySelector("#unity-canvas");
       var loadingBar = document.querySelector("#unity-loading-bar");
       var progressBarFull = document.querySelector("#unity-progress-bar-full");
+      var fullscreenButton = document.querySelector("#unity-fullscreen-button");
 
-      container.className = "unity-mobile";
-      config.devicePixelRatio = 1;
-
-      canvas.style.background = "url('" + buildUrl + "/vk_web_barbar.jpg') center / cover";
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        container.className = "unity-mobile";
+        config.devicePixelRatio = 1;
+      } else {
+        canvas.style.width = "960px";
+        canvas.style.height = "600px";
+      }
+      canvas.style.background = "url('" + buildUrl + "/barbarian_web.jpg') center / cover";
       loadingBar.style.display = "block";
 
-	  var unityInstance;
-
       var script = document.createElement("script");
+      var unityInstance;
       script.src = loaderUrl;
       script.onload = () => {
         createUnityInstance(canvas, config, (progress) => {
-          progressBarFull.style.width = 100 * progress + "%";
         }).then((_unityInstance) => {
-		  unityInstance = _unityInstance;
-          loadingBar.style.display = "none";
+          unityInstance = _unityInstance;
         }).catch((message) => {
           alert(message);
         });
       };
-	  
       document.body.appendChild(script);
-
-      var player;
-      var sdk;
-      var payments = null;
       
-      YaGames.init({
-            adv: {
-                onAdvClose: wasShown => {
-                      console.info('adv closed!');
-                }
-            }
-        })
-        .then(ysdk => {
-            sdk = ysdk;
-      });
-
+      vkBridge.send('VKWebAppInit');
+      
 
       function auth(){
-
-        if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)){
-          console.log('js SetMobile');
-          unityInstance.SendMessage('YandexSDK', 'SetMobile');
-        }
-
-        sdk.auth.openAuthDialog().then(() => {
-                // Игрок успешно авторизован, теперь объект Player будет инициализирован.
-                initPlayer();
-                console.log('auth ok');
-                unityInstance.SendMessage('YandexSDK', 'OnAuthenticate');
-        }).catch(() => {
-                 // Игрок не авторизован.
-                 console.log('auth failed');
-            });
-      }
-
-      function initPlayer(){
-        return sdk.getPlayer().then(_player => {
-                player = _player;       
-            }).catch(err => {
-                // Если игрок не авторизован, выбрасывает исключение USER_NOT_AUTHORIZED.
-            });
+        vkBridge.send('VKWebAppGetUserInfo').then(_info =>{
+          console.log(_info);
+          unityI.SendMessage('VKSDK', 'AuthenticateSuccess', JSON.stringify(_info));
+        });
       }
 
       function getUserData(){
-        if(initPlayer){
-          var data = {"id" : player.getID(), "name" : player.getName(), "avatarUrlSmall" : player.getPhoto('small'), "avatarUrlMedium" : player.getPhoto('medium'), "avatarUrlLarge" : player.getPhoto('large')};
-          unityInstance.SendMessage('YandexSDK', 'StoreUserData', JSON.stringify(data));
-        }
+        vkBridge.send("VKWebAppStorageGet",{"keys":["_save"]}).then(data =>{
+        console.log(data);
+        unityI.SendMessage('VKSDK', 'DataGetting', JSON.stringify(data));
+      });}
+
+      function setUserData(data){
+        console.log(data);
+        vkBridge.send('VKWebAppStorageSet',{"key": "_save" , "value": data}).then(_info =>{
+          console.log("Saved!")});
       }
 
       function showFullscrenAd(){
-        sdk.adv.showFullscreenAdv({
-          callbacks: {
-            onClose: function(wasShown) {
-              unityInstance.SendMessage('YandexSDK', 'OnInterstitialShown');
-            },
-            onError: function(error) {
-              unityInstance.SendMessage('YandexSDK', 'OnInterstitialFailed', error);
-            }
-          }
-        })
+        vkBridge.send('VKWebAppShowNativeAds',{ad_format:"interstitial"}).then(data => {
+          console.log(data);});
       }
 
-      function showRewardedAd(id){
-        sdk.adv.showRewardedVideo({
-        callbacks: {
-            onOpen: () => {
-                unityInstance.SendMessage('YandexSDK', 'OnRewardedOpen', id);
-                console.log('Video ad open. Id: ' + id);
-            },
-            onRewarded: () => {
-                unityInstance.SendMessage('YandexSDK', 'OnRewarded', id);
-                console.log('Rewarded! Id: ' + id);
-            },
-            onClose: () => {
-                unityInstance.SendMessage('YandexSDK', 'OnRewardedClose', id);
-                console.log('Video ad closed. Id: ' + id);
-            }, 
-            onError: (e) => {
-                var data = {"id" : id, "error" : error};
-                unityInstance.SendMessage('YandexSDK', 'OnRewardedError', JSON.stringify(data));
-                console.log('Error while open video ad:', e);
-            }
-          }
-        })
+      function showRewardedAd(){
+        vkBridge.send('VKWebAppShowNativeAds',{ad_format:"reward"}).then(data => {
+          console.log(data);
+          unityI.SendMessage('VKSDK', 'RewardGetting',JSON.stringify(data.result));})
       }
 
-      function initPayments(){
-        sdk.getPayments().then(_payments => {
-          // Покупки доступны.
-          payments = _payments;
-		  unityInstance.SendMessage('YandexSDK', 'OnInitPayments', JSON.stringify(_payments));
-        }).catch(err => {		  
-        })
-      }
-	  
-	  function getCatalog(){
-        payments.getCatalog().then(catalog => {
-
-          console.log('getCatalog ok -> ' + catalog);
-          console.log('getCatalog ok str -> ' + JSON.stringify(catalog));
-
-		  unityInstance.SendMessage('YandexSDK', 'OnGetCatalogSuccess', JSON.stringify(catalog));
-        }).catch(err => {		  
-		  unityInstance.SendMessage('YandexSDK', 'OnGetCatalogFailed', err);
-        })
-      }
-	  
-	  function getPurchases(){
-        payments.getPurchases().then(purchases => {
-
-          console.log('getPurchases ok -> ' + purchases);
-          console.log('getPurchases ok str -> ' + JSON.stringify(purchases));
-
-          unityInstance.SendMessage('YandexSDK', 'OnGetPurchasesSuccess', JSON.stringify(purchases));
-        }).catch(err => {		  
-		  unityInstance.SendMessage('YandexSDK', 'OnGetPurchasesFailed', err);
-        })
-      }
-
-      function buy(productId){
-        console.log('buy -> ' + productId);
-
-        payments.purchase({ id: productId }).then(purchase => {
-          // Покупка успешно совершена!
-          console.log('buy ok productId -> ' + productId);
-          console.log('buy ok purchase -> ' + purchase);
-          unityInstance.SendMessage('YandexSDK', 'OnPurchaseSuccess', productId);
-        }).catch(err => {
-          // Покупка не удалась: в консоли разработчика не добавлен товар с таким id,
-          // пользователь не авторизовался, передумал и закрыл окно оплаты,
-          // истекло отведенное на покупку время, не хватило денег и т. д.
-          unityInstance.SendMessage('YandexSDK', 'OnPurchaseFailed', err);
-        })
-      }
-
-      window.onbeforeunload = function(e) {
-        console.log("Calling OnClose from Browser!");
-        unityInstance.SendMessage("YandexSDK", "OnClose");
-    
-        var dialogText = "You game has been saved!  Would you like to continue unloading the page?";
-        e.returnValue = dialogText;
-        return dialogText;
-      };
     </script>
   </body>
 </html>
