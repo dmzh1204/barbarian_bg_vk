@@ -221,9 +221,9 @@
 		}
 		const bridge = vkBridge.default;
         bridge.send(nameMethod, obj).then(data => {
-			ss.SendMessage('VkBridge', 'SendResult', JSON.stringify(data));})
+			ss.SendMessage('VkBridge', 'SendResult', JSON.UTF8ToString(data));})
 		.catch(error => {
-			ss.SendMessage('VkBridge', 'SendResult', JSON.stringify(error));
+			ss.SendMessage('VkBridge', 'SendResult', JSON.UTF8ToString(error));
 		});;
 	  }
 	  
