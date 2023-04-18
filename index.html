@@ -99,12 +99,23 @@
       });
     };
     document.body.appendChild(script);
-	
-      function initBridge() {
-          const bridge = vkBridge.default;
-          bridge.subscribe((e) => console.log("vkBridge event", e));
-          bridge.send("VKWebAppInit", {});
-      }
+
+    function initBridge() {
+      const bridge = vkBridge.default;
+      bridge.subscribe((e) => console.log("vkBridge event", e));
+      bridge.send("VKWebAppInit", {});
+    }
+
+    function getUserInfo() {
+      const bridge = vkBridge.default;
+      bridge.subscribe((e) => {
+        if(e.detail.type == 'VKWebAppGetUserInfoResult') {
+        console.log("getUserInfo", e)
+        }
+      });
+      bridge.send("VKWebAppGetUserInfo", {});
+    }
+
       function showAd(adFormat, waterfall){
 
           const bridge = vkBridge.default;
