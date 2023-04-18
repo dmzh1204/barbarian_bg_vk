@@ -100,7 +100,7 @@
     };
     document.body.appendChild(script);
 	
-    function initBridge() {
+      function initBridge() {
           const bridge = vkBridge.default;
           bridge.subscribe((e) => console.log("vkBridge event", e));
           bridge.send("VKWebAppInit", {});
@@ -221,9 +221,9 @@
 		}
 		const bridge = vkBridge.default;
         bridge.send(nameMethod, obj).then(data => {
-			ss.SendMessage('VkBridge', 'SendResult', JSON.UTF8ToString(data));})
+			ss.SendMessage('VkBridge', 'SendResult', JSON.stringify(data));})
 		.catch(error => {
-			ss.SendMessage('VkBridge', 'SendResult', JSON.UTF8ToString(error));
+			ss.SendMessage('VkBridge', 'SendResult', JSON.stringify(error));
 		});;
 	  }
 	  
