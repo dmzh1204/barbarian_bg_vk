@@ -110,11 +110,31 @@
       const bridge = vkBridge.default;
       bridge.subscribe((e) => {
         if(e.detail.type == 'VKWebAppGetUserInfoResult') {
-        console.log("getUserInfo", e)
+          console.log("getUserInfo", e)
         }
       });
       bridge.send("VKWebAppGetUserInfo", {});
     }
+
+    function getAuthToken() {
+      const bridge = vkBridge.default;
+      bridge.send('VKWebAppGetAuthToken', {
+        app_id: 51612112,
+        scope: 'friends,status'
+      })
+              .then((data) => {
+                if (data.access_token) {
+                  // Ключ доступа пользователя получен
+                  console.log(data.access_token);
+                }
+              })
+              .catch((error) => {
+                // Ошибка
+                console.log(error);
+              });
+    }
+
+
 
       function showAd(adFormat, waterfall){
 
