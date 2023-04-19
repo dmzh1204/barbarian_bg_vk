@@ -107,6 +107,7 @@
     }
 
     function getUserInfo() {
+            const bridge = vkBridge.default;
            bridge.send('VKWebAppGetUserInfo', {})
               .then((data) => {
                 if (data.id) {
