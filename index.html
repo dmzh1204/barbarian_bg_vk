@@ -107,13 +107,18 @@
     }
 
     function getUserInfo() {
-      const bridge = vkBridge.default;
-      bridge.subscribe((e) => {
-        if(e.detail.type == 'VKWebAppGetUserInfoResult') {
-          console.log("getUserInfo", e)
-        }
-      });
-      bridge.send("VKWebAppGetUserInfo", {});
+           bridge.send('VKWebAppGetUserInfo', {})
+              .then((data) => {
+                if (data.id) {
+                  // Данные пользователя получены
+                  console.log(data);
+
+                }
+              })
+              .catch((error) => {
+                // Ошибка
+                console.log(error);
+              });
     }
 
       function getAuthToken() {
